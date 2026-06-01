@@ -1,0 +1,58 @@
+package uichecker.checks;
+
+import java.util.*;
+
+public class ResponsivenessCheck {
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> check(Map<String, Object> data, Map<String, Object> perf) {
+        var details = new ArrayList<Map<String, Object>>();
+        int score = 0;
+        int max = 20;
+
+        var vp = (String) data.get("viewportMeta");
+        boolean hasMQ = Boolean.TRUE.equals(data.get("hasMediaQueries"));
+        var images = (List<Map<String, Object>>) data.getOrDefault("images", new ArrayList<>());
+        long loadTime = ((Number) perf.getOrDefault("load_time", 0)).longValue();
+        long totalSize = ((Number) perf.getOrDefault("total_size", 0)).longValue();
+
+        if (vp != null) {
+            score += 5;
+            if (vp.contains("width=device-width") && vp.contains("initial-scale")) {
+                score += 3;
+                details.add(detail(true, "Proper viewport configuration", "width=device-width, initial-scale"));
+            } else {
+                details.add(detail(true, "Viewport meta tag present", vp));
+            }
+        } else {
+            score += 1;
+            details.add(detail(false, "Missing viewport meta tag", "Add viewport meta tag"));
+        }
+
+        if (hasMQ) { score += 5; details.add(detail(true, "Uses responsive media queries", "CSS media queries detected")); }
+        else { score += 0; details.add(detail(false, "No media queries found", "Add responsive breakpoints")); }
+
+        long largeImgs = images.stream().filter(img -> ((Number) img.getOrDefault("width", 0)).doubleValue() > 1000).count();
+        if (largeImgs == 0) { score += 3; details.add(detail(true, "No overly large images", "Good for responsive design")); }
+        else { score += 1; details.add(detail(false, "Large images (" + largeImgs + ")", "Consider responsive images with srcset")); }
+
+        if (loadTime < 2000) { score += 5; details.add(detail(true, "Fast page load", loadTime + "ms")); }
+        else if (loadTime < 5000) { score += 3; details.add(detail(false, "Moderate load time", loadTime + "ms (target < 2s)")); }
+        else { score += 1; details.add(detail(false, "Slow page load", loadTime + "ms (target < 2s)")); }
+
+        if (totalSize > 0) {
+            long kb = totalSize / 1024;
+            if (kb < 1000) { score += 2; details.add(detail(true, "Reasonable page size", kb + "KB")); }
+            else { score += 0; details.add(detail(false, "Large page size", kb + "KB (target < 1MB)")); }
+        }
+
+        return Map.of("score", Math.min(score, max), "max_score", max, "details", details);
+    }
+
+    private static Map<String, Object> detail(boolean pass, String label, String detail) {
+        var m = new LinkedHashMap<String, Object>();
+        m.put("pass", pass);
+        m.put("label", label);
+        if (detail != null) m.put("detail", detail);
+        return m;
+    }
+}

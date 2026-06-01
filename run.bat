@@ -1,4 +1,5 @@
 @echo off
+set MAVEN_OPTS=--enable-native-access=ALL-UNNAMED
 echo Building...
 call mvn\bin\mvn.cmd package -q -DskipTests
 if %errorlevel% neq 0 (

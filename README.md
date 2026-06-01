@@ -6,14 +6,22 @@ Scans URLs via Playwright (browser automation) or analyzes uploaded screenshot i
 
 > **Submission for the Open Source Hackathon.**
 
+## Quick start
+
+```shell
+# Windows
+run.bat
+
+# Linux
+./run.sh
+```
+
+The first run auto-builds the JAR, then launches the app. If Playwright browsers are missing, follow the prompt to install them.
+
 ## Prerequisites
 
-- **Java 25**
-- **Playwright browsers** – run once after building:
-  ```
-  java -jar target/ui-checker-1.0.0.jar
-  ```
-  If prompted, or run manually:
+- **Java 25** (Zulu JDK 25 recommended)
+- **Playwright browsers** – if not auto-prompted, install manually:
   ```
   playwright install chromium
   ```

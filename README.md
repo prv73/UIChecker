@@ -20,7 +20,7 @@ The first run auto-builds the JAR, then launches the app. If Playwright browsers
 
 ## Prerequisites
 
-- **Java 25** (Zulu JDK 25 recommended)
+- **Java 25**
 - **Playwright browsers** – if not auto-prompted, install manually:
   ```
   playwright install chromium

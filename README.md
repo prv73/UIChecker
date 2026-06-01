@@ -4,6 +4,8 @@ A cross-platform desktop application that analyzes UIs for readability, accessib
 
 Scans URLs via Playwright (browser automation) or analyzes uploaded screenshot images, then scores each dimension out of 100 with detailed breakdowns.
 
+> **Submission for the Open Source Hackathon.**
+
 ## Prerequisites
 
 - **Java 25** (Zulu JDK 25 recommended)

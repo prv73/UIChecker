@@ -8,7 +8,7 @@ Scans URLs via Playwright (browser automation) or analyzes uploaded screenshot i
 
 ## Prerequisites
 
-- **Java 25** (Zulu JDK 25 recommended)
+- **Java 25**
 - **Playwright browsers** – run once after building:
   ```
   java -jar target/ui-checker-1.0.0.jar

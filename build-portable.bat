@@ -52,16 +52,7 @@ if exist "C:\Program Files (x86)\WiX Toolset v3.14\bin" set WIX_DIR=C:\Program F
 if exist "C:\Program Files (x86)\WiX Toolset v3.11\bin" set WIX_DIR=C:\Program Files (x86)\WiX Toolset v3.11\bin
 if exist "C:\Program Files\WiX Toolset v3.14\bin" set WIX_DIR=C:\Program Files\WiX Toolset v3.14\bin
 
-if defined WIX_DIR (
-    set PATH=!WIX_DIR!;!PATH!
-    set JPACKAGE_TYPE=exe
-) else (
-    echo WARNING: WiX Toolset not found. Building portable folder instead.
-    echo         To create a single-file installer, install WiX from:
-    echo         https://wixtoolset.org
-    echo.
-    set JPACKAGE_TYPE=app-image
-)
+set JPACKAGE_TYPE=app-image
 
 set JPACKAGE="!JAVA_HOME!\bin\jpackage"
 if exist dist rmdir /s /q dist

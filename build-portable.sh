@@ -52,7 +52,7 @@ rm -rf dist
   --java-options "--enable-native-access=ALL-UNNAMED" \
   --java-options "-Dawt.useSystemAAFontSettings=on" \
   --java-options "-Dswing.aatext=true" \
-  --java-options "-Dsun.java2d.opengl=true"
+
 
 rm -rf dist-input
 

@@ -57,7 +57,7 @@ set JPACKAGE_TYPE=app-image
 set JPACKAGE="!JAVA_HOME!\bin\jpackage"
 if exist dist rmdir /s /q dist
 
-%JPACKAGE% --type %JPACKAGE_TYPE% --input dist-input --main-jar ui-checker-1.0.0.jar --main-class uichecker.App --name UIChecker --add-modules java.base,java.compiler,java.desktop,java.sql --dest dist --java-options "--enable-native-access=ALL-UNNAMED" --java-options "-Dawt.useSystemAAFontSettings=on" --java-options "-Dswing.aatext=true" --java-options "-Dsun.java2d.opengl=true"
+%JPACKAGE% --type %JPACKAGE_TYPE% --input dist-input --main-jar ui-checker-1.0.0.jar --main-class uichecker.App --name UIChecker --add-modules java.base,java.compiler,java.desktop,java.sql --dest dist --java-options "--enable-native-access=ALL-UNNAMED" --java-options "-Dawt.useSystemAAFontSettings=on" --java-options "-Dswing.aatext=true"
 
 if %errorlevel% neq 0 (
     echo jpackage failed. See error above.

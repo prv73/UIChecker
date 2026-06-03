@@ -11,6 +11,7 @@ import java.awt.event.*;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -828,6 +829,127 @@ public class App {
         return card;
     }
 
+    // ── Example Image Generation ──────────────────────────────
+    private static BufferedImage generateExampleImage() {
+        int w = 800, h = 600;
+        var img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        var g = img.createGraphics();
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+        // Background
+        g.setColor(new Color(0xf0f0f0));
+        g.fillRect(0, 0, w, h);
+
+        // Top header bar
+        g.setColor(new Color(0x1a1a1a));
+        g.fillRect(0, 0, w, 56);
+        g.setColor(new Color(0xffffff));
+        g.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        g.drawString("Dashboard", 24, 36);
+
+        // Header right icons (3 small circles)
+        g.setColor(new Color(0x555555));
+        for (int i = 0; i < 3; i++) g.fillOval(w - 120 + i * 40, 20, 16, 16);
+
+        // Sidebar
+        g.setColor(new Color(0x2a2a2a));
+        g.fillRect(0, 56, 200, h - 56);
+        g.setColor(new Color(0x444444));
+        for (int i = 0; i < 5; i++) {
+            g.fillRoundRect(20, 78 + i * 50, 160, 34, 8, 8);
+        }
+        // Active nav item
+        g.setColor(new Color(0x3a6ea5));
+        g.fillRoundRect(20, 78, 160, 34, 8, 8);
+
+        // Content area cards
+        int cx = 220, cy = 76;
+
+        // Card 1 - wide
+        g.setColor(Color.WHITE);
+        g.fillRoundRect(cx, cy, 550, 160, 12, 12);
+        g.setColor(new Color(0x333333));
+        g.fillRoundRect(cx + 16, cy + 16, 180, 18, 4, 4);
+        g.fillRoundRect(cx + 16, cy + 44, 320, 10, 4, 4);
+        g.fillRoundRect(cx + 16, cy + 60, 280, 10, 4, 4);
+        g.fillRoundRect(cx + 16, cy + 76, 300, 10, 4, 4);
+        // Card 1 progress bars
+        g.setColor(new Color(0x4caf50));
+        g.fillRoundRect(cx + 380, cy + 40, 150, 8, 4, 4);
+        g.setColor(new Color(0x2196f3));
+        g.fillRoundRect(cx + 380, cy + 60, 120, 8, 4, 4);
+        g.setColor(new Color(0xff9800));
+        g.fillRoundRect(cx + 380, cy + 80, 90, 8, 4, 4);
+        g.setColor(new Color(0x9e9e9e));
+        g.fillRoundRect(cx + 380, cy + 100, 140, 8, 4, 4);
+
+        // Card 2 - half width left
+        g.setColor(Color.WHITE);
+        g.fillRoundRect(cx, cy + 180, 265, 180, 12, 12);
+        g.setColor(new Color(0x333333));
+        g.fillRoundRect(cx + 16, cy + 196, 140, 16, 4, 4);
+        for (int i = 0; i < 4; i++) {
+            g.fillRoundRect(cx + 16, cy + 226 + i * 30, 220, 8, 4, 4);
+        }
+        // Mini chart
+        g.setColor(new Color(0x2196f3));
+        int[] xs = {cx + 16, cx + 60, cx + 100, cx + 140, cx + 180, cx + 220};
+        int[] ys = {cy + 310, cy + 290, cy + 310, cy + 280, cy + 295, cy + 270};
+        g.setStroke(new BasicStroke(2.5f));
+        g.drawPolyline(xs, ys, 6);
+        g.setColor(new Color(33, 150, 243, 30));
+        g.setStroke(new BasicStroke(1));
+        g.fillPolygon(new int[]{cx + 16, xs[5], cx + 220}, new int[]{cy + 340, ys[5], cy + 340}, 3);
+
+        // Card 3 - half width right
+        g.setColor(Color.WHITE);
+        g.fillRoundRect(cx + 285, cy + 180, 265, 180, 12, 12);
+        g.setColor(new Color(0x333333));
+        g.fillRoundRect(cx + 301, cy + 196, 120, 16, 4, 4);
+        // Doughnut chart (circle segments)
+        g.setColor(new Color(0x4caf50));
+        g.fillArc(cx + 350, cy + 230, 80, 80, 0, 130);
+        g.setColor(new Color(0x2196f3));
+        g.fillArc(cx + 350, cy + 230, 80, 80, 130, 100);
+        g.setColor(new Color(0xff9800));
+        g.fillArc(cx + 350, cy + 230, 80, 80, 230, 60);
+        g.fillArc(cx + 350, cy + 230, 80, 80, 290, 70);
+        g.setColor(Color.WHITE);
+        g.fillOval(cx + 365, cy + 245, 50, 50);
+        // Legend items
+        g.setColor(new Color(0x4caf50));
+        g.fillRoundRect(cx + 301, cy + 240, 36, 12, 4, 4);
+        g.setColor(new Color(0x333333));
+        g.fillRoundRect(cx + 301, cy + 258, 50, 6, 3, 3);
+        g.setColor(new Color(0x2196f3));
+        g.fillRoundRect(cx + 301, cy + 270, 36, 12, 4, 4);
+        g.setColor(new Color(0x333333));
+        g.fillRoundRect(cx + 301, cy + 288, 50, 6, 3, 3);
+        g.setColor(new Color(0xff9800));
+        g.fillRoundRect(cx + 301, cy + 300, 36, 12, 4, 4);
+        g.setColor(new Color(0x333333));
+        g.fillRoundRect(cx + 301, cy + 318, 50, 6, 3, 3);
+
+        // Card 4 - bottom wide
+        g.setColor(Color.WHITE);
+        g.fillRoundRect(cx, cy + 380, 550, 120, 12, 12);
+        g.setColor(new Color(0x333333));
+        g.fillRoundRect(cx + 16, cy + 396, 160, 16, 4, 4);
+        // Table headers
+        int[] colWidths = {180, 80, 100, 80, 60};
+        int tx = cx + 16;
+        g.setColor(new Color(0xe0e0e0));
+        g.fillRoundRect(tx, cy + 424, 520, 24, 4, 4);
+        for (int i = 0; i < 3; i++) {
+            g.fillRoundRect(tx, cy + 456 + i * 14, 520, 10, 3, 3);
+        }
+
+        g.dispose();
+        return img;
+    }
+
     // ── Example Template ──────────────────────────────────────
     private Map<String, Object> exampleTemplate() {
         var cat = new LinkedHashMap<String, Object>();
@@ -874,14 +996,18 @@ public class App {
         perf.put("resource_count", 12);
         perf.put("total_size", 245_000L);
 
+        var ss = generateExampleImage();
+        var ssBytes = new ByteArrayOutputStream();
+        try { ImageIO.write(ss, "PNG", ssBytes); } catch (Exception ignored) {}
+        var ssB64 = Base64.getEncoder().encodeToString(ssBytes.toByteArray());
+
         var result = new LinkedHashMap<String, Object>();
-        result.put("type", "url");
-        result.put("title", "Example Template");
-        result.put("url", "https://example.com/perfect-page");
+        result.put("title", "Example Template (96/100)");
         result.put("total_score", 96);
         result.put("max_score", 100);
         result.put("categories", cat);
         result.put("performance", perf);
+        result.put("screenshot", ssB64);
         return result;
     }
 

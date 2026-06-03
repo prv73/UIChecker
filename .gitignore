@@ -13,3 +13,5 @@ __pycache__/
 .settings/
 .DS_Store
 Thumbs.db
+dist/
+dist-input/

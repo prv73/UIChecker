@@ -299,6 +299,23 @@ public class App {
             if (selectedFile != null) analyzeImage(selectedFile);
         }));
 
+        // Divider before example
+        card.add(Box.createVerticalStrut(10));
+        card.add(new JPanel() {
+            { setOpaque(false); setMaximumSize(new Dimension(9999, 1)); }
+            @Override protected void paintComponent(Graphics g) {
+                var g2 = (Graphics2D) g.create();
+                g2.setColor(new Color(0x2e2e2e));
+                g2.fillRect(0, 0, getWidth(), 1);
+                g2.dispose();
+            }
+        });
+        card.add(Box.createVerticalStrut(10));
+
+        card.add(new RoundedButton("Show Example", ACCENT, () -> {
+            showResult(exampleTemplate());
+        }));
+
         return card;
     }
 
@@ -477,6 +494,23 @@ public class App {
         if (perf != null) {
             content.add(Box.createVerticalStrut(16));
             content.add(perfCard(perf));
+        }
+
+        // Suggestions card
+        var suggestions = new ArrayList<String>();
+        for (var entry : cats.entrySet()) {
+            var c = (Map<String, Object>) entry.getValue();
+            var details = (List<Map<String, Object>>) c.getOrDefault("details", List.of());
+            for (var d : details) {
+                if (Boolean.FALSE.equals(d.get("pass"))) {
+                    var sug = (String) d.get("suggestion");
+                    if (sug != null && !sug.isEmpty()) suggestions.add(sug);
+                }
+            }
+        }
+        if (!suggestions.isEmpty()) {
+            content.add(Box.createVerticalStrut(16));
+            content.add(suggestionsCard(suggestions));
         }
 
         scroll.setViewportView(content);
@@ -663,7 +697,8 @@ public class App {
                 var pass = Boolean.TRUE.equals(d.get("pass"));
                 var dt = (String) d.get("label");
                 var dh = (String) d.get("detail");
-                card.add(detailRow(pass, dt, dh));
+                var sug = (String) d.get("suggestion");
+                card.add(detailRow(pass, dt, dh, sug));
                 card.add(Box.createVerticalStrut(4));
             }
         }
@@ -671,7 +706,7 @@ public class App {
         return card;
     }
 
-    private JPanel detailRow(boolean pass, String text, String hint) {
+    private JPanel detailRow(boolean pass, String text, String hint, String suggestion) {
         var p = new JPanel(new BorderLayout(6, 0));
         p.setOpaque(false);
         p.setMaximumSize(new Dimension(700, 20));
@@ -679,6 +714,9 @@ public class App {
         var icon = new JLabel(pass ? "\u2713" : "\u2717");
         icon.setFont(new Font(FONT, Font.BOLD, 13));
         icon.setForeground(pass ? GREEN : RED);
+        if (suggestion != null && !suggestion.isEmpty()) {
+            icon.setToolTipText("<html><body style='width:300px;padding:6px;'>" + suggestion + "</body></html>");
+        }
         p.add(icon, BorderLayout.WEST);
 
         var full = hint != null ? text + "  \u2014  " + hint : text;
@@ -766,6 +804,94 @@ public class App {
         p.setPreferredSize(new Dimension(56, 56));
         p.setOpaque(false);
         return p;
+    }
+
+    // ── Suggestions Card ──────────────────────────────────────
+    private JPanel suggestionsCard(List<String> suggestions) {
+        var card = new RoundedPanel(CARD, BORDER, 14);
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBorder(new EmptyBorder(18, 22, 18, 22));
+
+        var title = new JLabel("Suggestions to Improve");
+        title.setFont(new Font(FONT, Font.BOLD, 13));
+        title.setForeground(YELLOW);
+        card.add(title);
+
+        for (var s : suggestions) {
+            card.add(Box.createVerticalStrut(8));
+            var lbl = new JLabel("\u2192  " + s);
+            lbl.setFont(new Font(FONT, Font.PLAIN, 11));
+            lbl.setForeground(TEXT_SUB);
+            card.add(lbl);
+        }
+
+        return card;
+    }
+
+    // ── Example Template ──────────────────────────────────────
+    private Map<String, Object> exampleTemplate() {
+        var cat = new LinkedHashMap<String, Object>();
+
+        var readDetails = List.of(
+            detail(true, "Uses 16px+ body text", "16px", null),
+            detail(true, "Clear heading hierarchy", "H1\u2192H2\u2192H3", null),
+            detail(true, "Adequate line height", "1.5x", null)
+        );
+        cat.put("readability", Map.of("score", 20, "max_score", 20, "details", readDetails));
+
+        var accDetails = List.of(
+            detail(true, "All images have alt text", null, null),
+            detail(true, "ARIA landmarks present", "4 regions", null),
+            detail(true, "HTML lang attribute set", "en", null),
+            detail(true, "Valid doctype", "html5", null)
+        );
+        cat.put("accessibility", Map.of("score", 20, "max_score", 20, "details", accDetails));
+
+        var conDetails = List.of(
+            detail(true, "Strong text contrast", "7.5:1", null),
+            detail(true, "Balanced color palette", "12 colors", null),
+            detail(true, "All ratios exceed 4.5:1", "WCAG AA", null)
+        );
+        cat.put("contrast", Map.of("score", 18, "max_score", 20, "details", conDetails));
+
+        var layDetails = List.of(
+            detail(true, "Well-structured layout", "62% density", null),
+            detail(true, "Consistent sections", "8 sections", null),
+            detail(true, "Good heading density", "1 per 200 words", null)
+        );
+        cat.put("layout", Map.of("score", 18, "max_score", 20, "details", layDetails));
+
+        var respDetails = List.of(
+            detail(true, "Viewport meta tag found", null, null),
+            detail(true, "Uses relative units", "%/em/rem", null),
+            detail(true, "Responsive images", "srcset used", null),
+            detail(true, "Fast load time", "0.8s", null)
+        );
+        cat.put("responsiveness", Map.of("score", 20, "max_score", 20, "details", respDetails));
+
+        var perf = new LinkedHashMap<String, Object>();
+        perf.put("load_time", 800L);
+        perf.put("resource_count", 12);
+        perf.put("total_size", 245_000L);
+
+        var result = new LinkedHashMap<String, Object>();
+        result.put("type", "url");
+        result.put("title", "Example Template");
+        result.put("url", "https://example.com/perfect-page");
+        result.put("total_score", 96);
+        result.put("max_score", 100);
+        result.put("categories", cat);
+        result.put("performance", perf);
+        return result;
+    }
+
+    private Map<String, Object> detail(boolean pass, String label, String detail, String suggestion) {
+        var m = new LinkedHashMap<String, Object>();
+        m.put("pass", pass);
+        m.put("label", label);
+        if (detail != null) m.put("detail", detail);
+        if (suggestion != null) m.put("suggestion", suggestion);
+        return m;
     }
 
     // ── Helpers ───────────────────────────────────────────────

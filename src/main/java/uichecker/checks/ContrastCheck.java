@@ -39,18 +39,18 @@ public class ContrastCheck {
                 total++;
             }
             double ratio = total > 0 ? (double) good / total : 0;
-            if (ratio >= 0.7) { score += 10; details.add(detail(true, "Good color contrast overall", Math.round(ratio * 100) + "% pairs meet WCAG AA")); }
-            else if (ratio >= 0.4) { score += 6; details.add(detail(false, "Moderate color contrast issues", Math.round(ratio * 100) + "% pairs meet WCAG AA")); }
-            else { score += 2; details.add(detail(false, "Poor color contrast", Math.round(ratio * 100) + "% pairs meet WCAG AA")); }
+            if (ratio >= 0.7) { score += 10; details.add(detail(true, "Good color contrast overall", Math.round(ratio * 100) + "% of color pairs meet WCAG AA 4.5:1", null)); }
+            else if (ratio >= 0.4) { score += 6; details.add(detail(false, "Moderate contrast issues", Math.round(ratio * 100) + "% of color pairs meet WCAG AA 4.5:1", "Increase contrast between foreground and background colors to at least 4.5:1")); }
+            else { score += 2; details.add(detail(false, "Poor color contrast", Math.round(ratio * 100) + "% of color pairs meet WCAG AA 4.5:1", "Many color combinations fail WCAG AA. Use darker text on light backgrounds or lighter text on dark backgrounds")); }
         } else {
-            score += 7; details.add(detail(true, "Limited color palette", colorList.size() + " colors found"));
+            score += 7; details.add(detail(true, "Limited color palette found", colorList.size() + " colors", null));
         }
 
-        if (colorList.size() <= 7) { score += 5; details.add(detail(true, "Reasonable color palette size", colorList.size() + " unique colors")); }
-        else if (colorList.size() <= 12) { score += 3; details.add(detail(false, "Many colors used", colorList.size() + " unique colors, consider reducing")); }
-        else { score += 1; details.add(detail(false, "Too many colors", colorList.size() + " unique colors, simplify palette")); }
+        if (colorList.size() <= 7) { score += 5; details.add(detail(true, "Reasonable color palette size", colorList.size() + " unique colors", null)); }
+        else if (colorList.size() <= 12) { score += 3; details.add(detail(false, "Many colors used", colorList.size() + " unique colors", "Consider reducing to 5-7 main colors for visual consistency")); }
+        else { score += 1; details.add(detail(false, "Too many colors", colorList.size() + " unique colors", "Simplify your palette: stick to 5-7 core colors and reuse them consistently")); }
 
-        score += 5; details.add(detail(true, "Color analysis completed", null));
+        score += 5; details.add(detail(true, "Color analysis completed", null, null));
         return Map.of("score", Math.min(score, max), "max_score", max, "details", details);
     }
 
@@ -84,11 +84,12 @@ public class ContrastCheck {
         return (lighter + 0.05) / (darker + 0.05);
     }
 
-    private static Map<String, Object> detail(boolean pass, String label, String detail) {
+    private static Map<String, Object> detail(boolean pass, String label, String detail, String suggestion) {
         var m = new LinkedHashMap<String, Object>();
         m.put("pass", pass);
         m.put("label", label);
         if (detail != null) m.put("detail", detail);
+        if (suggestion != null) m.put("suggestion", suggestion);
         return m;
     }
 }

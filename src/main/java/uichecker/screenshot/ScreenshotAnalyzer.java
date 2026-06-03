@@ -33,26 +33,33 @@ public class ScreenshotAnalyzer {
             var categories = new LinkedHashMap<String, Object>();
 
             var contrastDetails = new ArrayList<Map<String, Object>>();
-            contrastDetails.add(detail(true, "Image dimensions", w + "x" + h + " pixels"));
-            contrastDetails.add(detail(true, "Overall contrast", String.format("%.1f%%", analysis.get("contrast_pct"))));
+            contrastDetails.add(detail(true, "Image dimensions", w + "x" + h + " pixels", null));
+            double avgContrast = (double) analysis.get("avg_contrast");
+            boolean contrastOk = avgContrast >= 3.0;
+            contrastDetails.add(detail(contrastOk, "Local contrast ratio", String.format("%.2f:1", avgContrast),
+                contrastOk ? null : "Increase contrast between adjacent colors for better visual clarity and accessibility"));
             categories.put("contrast", Map.of("score", analysis.get("contrast_score"), "max_score", 25, "details", contrastDetails));
 
             var colorDetails = new ArrayList<Map<String, Object>>();
             int uniqueColors = (int) analysis.get("unique_colors");
-            colorDetails.add(detail(true, "Unique colors detected", uniqueColors + " colors"));
+            boolean colorOk = uniqueColors <= 80;
+            colorDetails.add(detail(true, "Unique colors detected", uniqueColors + " colors", null));
             String palette = (String) analysis.get("palette_desc");
-            colorDetails.add(detail(true, "Color palette", palette));
+            colorDetails.add(detail(true, "Color palette", palette, null));
+            colorDetails.add(detail(colorOk, "Palette complexity", uniqueColors <= 30 ? "Clean palette" : "Could be simplified",
+                colorOk ? null : "Reduce to 30 or fewer dominant colors for a cleaner, more cohesive design"));
             categories.put("color", Map.of("score", analysis.get("color_score"), "max_score", 25, "details", colorDetails));
 
             var brightDetails = new ArrayList<Map<String, Object>>();
             double avgBrightness = (double) analysis.get("avg_brightness");
-            brightDetails.add(detail(true, "Average brightness", String.format("%.1f%%", avgBrightness)));
-            boolean isBalanced = avgBrightness > 20 && avgBrightness < 80;
-            brightDetails.add(detail(isBalanced, "Brightness balance", isBalanced ? "Well-balanced" : "Too bright or too dark"));
+            boolean balanced = avgBrightness > 25 && avgBrightness < 75;
+            brightDetails.add(detail(true, "Average brightness", String.format("%.1f%%", avgBrightness), null));
+            brightDetails.add(detail(balanced, "Brightness balance", balanced ? "Well-balanced" : "Too bright or too dark",
+                balanced ? null : "Adjust brightness to fall in the 25-75% range for comfortable viewing"));
             categories.put("brightness", Map.of("score", analysis.get("brightness_score"), "max_score", 25, "details", brightDetails));
 
             var readDetails = new ArrayList<Map<String, Object>>();
-            readDetails.add(detail(true, "Image analysis completed", null));
+            readDetails.add(detail(true, "Image analysis completed", null, null));
             categories.put("readability", Map.of("score", analysis.get("readability_score"), "max_score", 25, "details", readDetails));
 
             var result = new LinkedHashMap<String, Object>();
@@ -178,11 +185,12 @@ public class ScreenshotAnalyzer {
         return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
     }
 
-    private static Map<String, Object> detail(boolean pass, String label, String detail) {
+    private static Map<String, Object> detail(boolean pass, String label, String detail, String suggestion) {
         var m = new LinkedHashMap<String, Object>();
         m.put("pass", pass);
         m.put("label", label);
         if (detail != null) m.put("detail", detail);
+        if (suggestion != null) m.put("suggestion", suggestion);
         return m;
     }
 

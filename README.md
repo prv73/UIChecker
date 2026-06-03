@@ -9,62 +9,23 @@ Scans URLs via Playwright (browser automation) or analyzes uploaded screenshot i
 ## Quick start
 
 ```shell
-# Windows
-run.bat
-
-# Linux
-./run.sh
-```
-
-The first run auto-builds the JAR, then launches the app. If Playwright browsers are missing, follow the prompt to install them.
-
-## Prerequisites
-
-- **Java 25**
-- **Playwright browsers** – if not auto-prompted, install manually:
-  ```
-  playwright install chromium
-  ```
-
-## Build & Run (Development)
-
-A Maven distribution is bundled at `mvn/` – no system Maven needed.
-
-```shell
-mvn\bin\mvn clean package -DskipTests
+mvn\bin\mvn package -DskipTests
 java --enable-native-access=ALL-UNNAMED -jar target/ui-checker-1.0.0.jar
 ```
 
-Or use the convenience scripts:
+The first run builds the JAR and launches the app. If Playwright browsers are missing, install them with `playwright install chromium`.
+
+## Portable Build (no Java required)
 
 ```shell
-# Windows
-run.bat
-
-# Linux
-./run.sh
-```
-
-Output: `target/ui-checker-1.0.0.jar` (~200 MB, includes Playwright driver binaries for Windows and Linux).
-
-## Portable Build (no Java required to run)
-
-Build a standalone Windows installer with a bundled Java runtime using `jpackage` (included in JDK 25):
-
-```shell
-# Windows (requires WiX Toolset for single-file EXE installer)
 build-portable.bat
 ```
 
-**Output (with WiX installed):** `dist/UIChecker-1.0.exe` (~216 MB) – a single-file installer EXE. Double-click to install; no Java installation needed.
+Output: `dist/UIChecker-1.0.exe` (~216 MB) – single-file installer with bundled JRE. Double-click to install; no Java needed.
 
-**Output (without WiX):** `dist/UIChecker/UIChecker.exe` (~270 MB) – a portable folder with the bundled JRE and launcher EXE.
-
-**How it works:** `jpackage` + `jlink` creates a minimal JRE (java.base, java.desktop, java.compiler, java.sql – ~77 MB) and wraps the fat JAR with a native launcher. The app works offline once built.
-
-> **Note:** On first URL analysis, Playwright downloads Chromium (~150 MB) automatically to `~/.cache/ms-playwright/`.
+> **WiX Toolset** required for the EXE installer. Install with: `winget install WiXToolset.WiXToolset`. Without WiX, a portable folder `dist/UIChecker/UIChecker.exe` is created instead.
 >
-> **WiX Toolset** is required for the single-file EXE installer. Install with: `winget install WiXToolset.WiXToolset`
+> Under the hood, `jpackage` + `jlink` creates a minimal JRE (~77 MB) and wraps the fat JAR with a native launcher. On first URL analysis, Playwright downloads Chromium (~150 MB) automatically.
 
 ## Features
 

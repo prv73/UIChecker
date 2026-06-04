@@ -1,12 +1,22 @@
 # UI Checker
 
-Desktop app that analyzes screenshot images for color contrast, palette diversity, and brightness balance.
+Desktop screenshot analysis app that scores UIs on contrast, color palette, and brightness balance.
 
 > **Submission for the Open Source Hackathon.**
 
+Built with **Python 3.14 + PySide6 6.11.1 + Pillow** — Windows only.
+
 ## Quick start
 
-Double-click `dist/UIChecker.exe` — no install, no Python needed.
+Double-click `dist/UIChecker.exe` — no Python or dependencies required (67 MB standalone EXE).
+
+## Features
+
+- **Color Contrast** — samples pixels, measures local contrast ratios, flags low-contrast areas
+- **Color Palette** — counts 8-bit quantized unique colors, evaluates variety and cleanliness
+- **Brightness Balance** — checks ratio of light vs dark pixels across the screenshot
+- **Animated UI** — gradient header, arc score meter, rounded cards with hover effects, dark theme
+- **Single-file EXE** — built with PyInstaller `--onefile --windowed`, no runtime or JVM needed
 
 ## From source
 
@@ -15,8 +25,18 @@ pip install -r requirements.txt
 python main.py
 ```
 
-## Features
+## Build EXE
 
-- **Screenshot Analysis** – samples pixels, measures local contrast ratio, counts quantized unique colors, checks brightness balance.
-- **Monochrome dark theme** – dark-mode PySide6 UI with animated score meters, hover effects, and sidebar layout.
-- **Windows only** – built and tested on Windows.
+```shell
+pip install pyinstaller
+pyinstaller --onefile --windowed --name UIChecker --distpath dist main.py
+```
+
+The standalone EXE will be at `dist/UIChecker.exe`.
+
+## Tech
+
+- Python 3.14, PySide6 6.11.1, Pillow 11.x
+- PyInstaller 6.x for packaging
+- Fusion style with custom QPainter widgets
+- Windows only

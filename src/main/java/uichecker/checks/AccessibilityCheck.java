@@ -1,6 +1,7 @@
 package uichecker.checks;
 
 import java.util.*;
+import static uichecker.CheckUtils.detail;
 
 public class AccessibilityCheck {
     @SuppressWarnings("unchecked")
@@ -70,12 +71,4 @@ public class AccessibilityCheck {
         return Map.of("score", Math.min(score, max), "max_score", max, "details", details);
     }
 
-    private static Map<String, Object> detail(boolean pass, String label, String detail, String suggestion) {
-        var m = new LinkedHashMap<String, Object>();
-        m.put("pass", pass);
-        m.put("label", label);
-        if (detail != null) m.put("detail", detail);
-        if (suggestion != null) m.put("suggestion", suggestion);
-        return m;
-    }
 }

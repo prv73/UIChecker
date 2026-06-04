@@ -3,6 +3,8 @@ package uichecker.checks;
 import java.awt.Color;
 import java.util.*;
 import java.util.regex.Pattern;
+import static uichecker.CheckUtils.detail;
+import static uichecker.CheckUtils.relativeLuminance;
 
 public class ContrastCheck {
     private static final Pattern RGBA = Pattern.compile("rgba?\\((\\d+),\\s*(\\d+),\\s*(\\d+)");
@@ -65,31 +67,11 @@ public class ContrastCheck {
         return null;
     }
 
-    private static double relativeLuminance(Color c) {
-        double r = linearize(c.getRed() / 255.0);
-        double g = linearize(c.getGreen() / 255.0);
-        double b = linearize(c.getBlue() / 255.0);
-        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    }
-
-    private static double linearize(double v) {
-        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-    }
-
     private static double contrastRatio(Color c1, Color c2) {
         double l1 = relativeLuminance(c1);
         double l2 = relativeLuminance(c2);
         double lighter = Math.max(l1, l2);
         double darker = Math.min(l1, l2);
         return (lighter + 0.05) / (darker + 0.05);
-    }
-
-    private static Map<String, Object> detail(boolean pass, String label, String detail, String suggestion) {
-        var m = new LinkedHashMap<String, Object>();
-        m.put("pass", pass);
-        m.put("label", label);
-        if (detail != null) m.put("detail", detail);
-        if (suggestion != null) m.put("suggestion", suggestion);
-        return m;
     }
 }

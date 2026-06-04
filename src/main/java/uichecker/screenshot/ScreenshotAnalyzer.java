@@ -5,7 +5,8 @@ import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.util.*;
-import java.util.Base64;
+import static uichecker.CheckUtils.detail;
+import static uichecker.CheckUtils.relativeLuminance;
 
 public class ScreenshotAnalyzer {
 
@@ -172,26 +173,6 @@ public class ScreenshotAnalyzer {
         int g = ((rgb >> 8) & 0xFF) / step * step;
         int b = (rgb & 0xFF) / step * step;
         return (r << 16) | (g << 8) | b;
-    }
-
-    private static double relativeLuminance(Color c) {
-        double r = linearize(c.getRed() / 255.0);
-        double g = linearize(c.getGreen() / 255.0);
-        double b = linearize(c.getBlue() / 255.0);
-        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    }
-
-    private static double linearize(double v) {
-        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
-    }
-
-    private static Map<String, Object> detail(boolean pass, String label, String detail, String suggestion) {
-        var m = new LinkedHashMap<String, Object>();
-        m.put("pass", pass);
-        m.put("label", label);
-        if (detail != null) m.put("detail", detail);
-        if (suggestion != null) m.put("suggestion", suggestion);
-        return m;
     }
 
     private static Map<String, Object> error(String msg) {

@@ -10,8 +10,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.*;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -24,7 +23,6 @@ public class App {
     // ── Palette ──────────────────────────────────────────────
     static final Color
         BG           = new Color(0x080808),
-        SURFACE      = new Color(0x111111),
         CARD         = new Color(0x1a1a1a),
         CARD_HOVER   = new Color(0x242424),
         BORDER       = new Color(0x2e2e2e),
@@ -32,7 +30,6 @@ public class App {
         TEXT_SUB      = new Color(0x888888),
         TEXT_MUTED    = new Color(0x555555),
         ACCENT       = new Color(0xcccccc),
-        ACCENT_GLOW  = new Color(0xffffff, true),
         GREEN         = new Color(0xbbbbbb),
         PURPLE        = new Color(0xaaaaaa),
         YELLOW        = new Color(0x999999),
@@ -57,13 +54,12 @@ public class App {
     private JLabel statusIcon, statusText;
     private JTextField urlField;
     private JLabel fileLabel;
-    private java.io.File selectedFile;
+    private File selectedFile;
     private javax.swing.Timer animateTimer;
     private float animProgress;
     private int animTargetScore, animMaxScore;
     private Color animColor;
     private JPanel meterContainer;
-    private boolean analyzing;
 
     // ── Entry ────────────────────────────────────────────────
     public static void main(String[] a) {
@@ -85,6 +81,30 @@ public class App {
         root = new JPanel(new BorderLayout());
         root.setBackground(BG);
         root.setBorder(new EmptyBorder(0, 0, 0, 0));
+
+        var mb = new JMenuBar();
+        mb.setBackground(new Color(0x111111));
+        mb.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(0x2e2e2e)));
+        var help = new JMenu("Help");
+        help.setForeground(TEXT);
+        help.setFont(new Font(FONT, Font.PLAIN, 12));
+        var about = new JMenuItem("About UIChecker");
+        about.setFont(new Font(FONT, Font.PLAIN, 12));
+        about.addActionListener(e -> {
+            var msg = "UIChecker v1.0\n\n"
+                + "Automated UI analysis tool for the Open Source Hackathon.\n\n"
+                + "Analyzes web pages and screenshots for:\n"
+                + "  - Readability & Typography\n"
+                + "  - Accessibility & ARIA\n"
+                + "  - Color Contrast (WCAG)\n"
+                + "  - Layout & Spacing\n"
+                + "  - Responsiveness\n\n"
+                + "Built with Java 25 + Swing + Playwright";
+            JOptionPane.showMessageDialog(frame, msg, "About UIChecker", JOptionPane.INFORMATION_MESSAGE);
+        });
+        help.add(about);
+        mb.add(help);
+        frame.setJMenuBar(mb);
 
         root.add(headerPanel(), BorderLayout.NORTH);
         root.add(bodyPanel(), BorderLayout.CENTER);
@@ -240,18 +260,7 @@ public class App {
             if (!u.isEmpty()) analyzeUrl(u);
         }));
 
-        // Divider
-        card.add(Box.createVerticalStrut(10));
-        card.add(new JPanel() {
-            { setOpaque(false); setMaximumSize(new Dimension(9999, 1)); }
-            @Override protected void paintComponent(Graphics g) {
-                var g2 = (Graphics2D) g.create();
-                g2.setColor(new Color(0x2e2e2e));
-                g2.fillRect(0, 0, getWidth(), 1);
-                g2.dispose();
-            }
-        });
-        card.add(Box.createVerticalStrut(10));
+        card.add(divider());
 
         // Screenshot section
         var imgTitle = new JLabel("\uD83D\uDDBC\uFE0F  Screenshot");
@@ -300,18 +309,7 @@ public class App {
             if (selectedFile != null) analyzeImage(selectedFile);
         }));
 
-        // Divider before example
-        card.add(Box.createVerticalStrut(10));
-        card.add(new JPanel() {
-            { setOpaque(false); setMaximumSize(new Dimension(9999, 1)); }
-            @Override protected void paintComponent(Graphics g) {
-                var g2 = (Graphics2D) g.create();
-                g2.setColor(new Color(0x2e2e2e));
-                g2.fillRect(0, 0, getWidth(), 1);
-                g2.dispose();
-            }
-        });
-        card.add(Box.createVerticalStrut(10));
+        card.add(divider());
 
         card.add(new RoundedButton("Show Example", ACCENT, () -> {
             showResult(exampleTemplate());
@@ -319,8 +317,6 @@ public class App {
 
         return card;
     }
-
-    // ── URL Section (sidebar) ─────────────────────────────────
 
     // ── Center (loading / status) ─────────────────────────────
     private JPanel centerPanel() {
@@ -338,7 +334,7 @@ public class App {
         status.add(statusIcon, sg);
 
         sg.gridy = 1; sg.insets = new Insets(12, 0, 0, 0);
-        statusText = new JLabel("Enter a URL or upload a screenshot to begin");
+        statusText = new JLabel("Enter a URL or upload a screenshot to analyze");
         statusText.setFont(new Font(FONT, Font.PLAIN, 14));
         statusText.setForeground(TEXT_SUB);
         status.add(statusText, sg);
@@ -370,7 +366,6 @@ public class App {
     //  ANALYSIS
     // ═══════════════════════════════════════════════════════════
     private void setLoading(boolean loading, String msg) {
-        analyzing = loading;
         statusIcon.setText(loading ? "\u23F3" : "\uD83D\uDD0D");
         statusText.setText(msg);
         if (loading) resultsScrollOuter.setVisible(false);
@@ -447,7 +442,6 @@ public class App {
             return;
         }
 
-        analyzing = false;
         var total = ((Number) result.getOrDefault("total_score", 0)).intValue();
         var max = ((Number) result.getOrDefault("max_score", 100)).intValue();
         var cats = (Map<String, Object>) result.getOrDefault("categories", Map.of());
@@ -1012,12 +1006,7 @@ public class App {
     }
 
     private Map<String, Object> detail(boolean pass, String label, String detail, String suggestion) {
-        var m = new LinkedHashMap<String, Object>();
-        m.put("pass", pass);
-        m.put("label", label);
-        if (detail != null) m.put("detail", detail);
-        if (suggestion != null) m.put("suggestion", suggestion);
-        return m;
+        return CheckUtils.detail(pass, label, detail, suggestion);
     }
 
     // ── Helpers ───────────────────────────────────────────────
@@ -1029,6 +1018,23 @@ public class App {
         if (p >= 50) return new Grade("Fair", YELLOW);
         if (p >= 30) return new Grade("Poor", ORANGE);
         return new Grade("Bad", RED);
+    }
+
+    private Component divider() {
+        var d = new JPanel() {
+            { setOpaque(false); setMaximumSize(new Dimension(9999, 1)); }
+            @Override protected void paintComponent(Graphics g) {
+                var g2 = (Graphics2D) g.create();
+                g2.setColor(new Color(0x2e2e2e));
+                g2.fillRect(0, 0, getWidth(), 1);
+                g2.dispose();
+            }
+        };
+        var box = Box.createVerticalBox();
+        box.add(Box.createVerticalStrut(10));
+        box.add(d);
+        box.add(Box.createVerticalStrut(10));
+        return box;
     }
 
     // ═══════════════════════════════════════════════════════════

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -e
-export MAVEN_OPTS="--enable-native-access=ALL-UNNAMED"
+export MAVEN_OPTS=""
 
 echo "============================================"
 echo " UI Checker - Portable Build"
@@ -47,12 +47,10 @@ rm -rf dist
   --main-jar ui-checker-1.0.0.jar \
   --main-class uichecker.App \
   --name UIChecker \
-  --add-modules java.base,java.compiler,java.desktop,java.sql \
+  --add-modules java.base,java.desktop \
   --dest dist \
-  --java-options "--enable-native-access=ALL-UNNAMED" \
   --java-options "-Dawt.useSystemAAFontSettings=on" \
-  --java-options "-Dswing.aatext=true" \
-
+  --java-options "-Dswing.aatext=true"
 
 rm -rf dist-input
 
@@ -63,9 +61,6 @@ echo " Location: dist/UIChecker/"
 echo " Launcher: dist/UIChecker/bin/UIChecker"
 echo " Size:     ~270 MB (includes bundled Java runtime)"
 echo "============================================"
-echo ""
-echo " NOTE: On first URL analysis, Playwright will"
-echo " download Chromium (~150 MB) automatically."
 echo ""
 echo " To distribute, tar/zip the entire dist/UIChecker/ folder."
 echo ""

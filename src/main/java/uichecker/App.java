@@ -15,10 +15,6 @@ import java.util.*;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-import com.microsoft.playwright.*;
-import com.microsoft.playwright.options.ScreenshotType;
-import com.microsoft.playwright.options.WaitUntilState;
-
 public class App {
     // ── Palette ──────────────────────────────────────────────
     static final Color
@@ -52,7 +48,6 @@ public class App {
     private JPanel root;
     private JPanel resultsScrollOuter;
     private JLabel statusIcon, statusText;
-    private JTextField urlField;
     private JLabel fileLabel;
     private File selectedFile;
     private javax.swing.Timer animateTimer;
@@ -92,14 +87,12 @@ public class App {
         about.setFont(new Font(FONT, Font.PLAIN, 12));
         about.addActionListener(e -> {
             var msg = "UIChecker v1.0\n\n"
-                + "Automated UI analysis tool for the Open Source Hackathon.\n\n"
-                + "Analyzes web pages and screenshots for:\n"
-                + "  - Readability & Typography\n"
-                + "  - Accessibility & ARIA\n"
-                + "  - Color Contrast (WCAG)\n"
-                + "  - Layout & Spacing\n"
-                + "  - Responsiveness\n\n"
-                + "Built with Java 25 + Swing + Playwright";
+                + "Desktop screenshot analysis tool for the Open Source Hackathon.\n\n"
+                + "Analyzes uploaded screenshots for:\n"
+                + "  - Color Contrast\n"
+                + "  - Color Palette\n"
+                + "  - Brightness Balance\n\n"
+                + "Built with Java 25 + Swing";
             JOptionPane.showMessageDialog(frame, msg, "About UIChecker", JOptionPane.INFORMATION_MESSAGE);
         });
         help.add(about);
@@ -215,53 +208,6 @@ public class App {
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBorder(new EmptyBorder(12, 14, 12, 14));
 
-        // URL section
-        var urlTitle = new JLabel("\uD83C\uDF10  URL Analysis");
-        urlTitle.setFont(new Font(FONT, Font.BOLD, 12));
-        urlTitle.setForeground(TEXT);
-        urlTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.add(urlTitle);
-        card.add(Box.createVerticalStrut(6));
-
-        urlField = new JTextField("https://") {
-            @Override protected void paintComponent(Graphics g) {
-                var g2 = (Graphics2D) g.create();
-                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(isFocusOwner() ? new Color(0x222222) : new Color(0x181818));
-                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 10, 10);
-                if (isFocusOwner()) {
-                    g2.setColor(new Color(200, 200, 200, 40));
-                    g2.setStroke(new BasicStroke(2));
-                    g2.drawRoundRect(1, 1, getWidth()-3, getHeight()-3, 10, 10);
-                }
-                super.paintComponent(g);
-                g2.dispose();
-            }
-        };
-        urlField.setOpaque(false);
-        urlField.setFont(new Font(FONT, Font.PLAIN, 13));
-        urlField.setForeground(TEXT);
-        urlField.setCaretColor(ACCENT);
-        urlField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(0x2e2e2e), 1, true),
-            new EmptyBorder(8, 12, 8, 12)));
-        urlField.addFocusListener(new FocusAdapter() {
-            public void focusGained(FocusEvent e) { urlField.repaint(); }
-            public void focusLost(FocusEvent e) { urlField.repaint(); }
-        });
-        urlField.setMaximumSize(new Dimension(9999, 36));
-        urlField.setAlignmentX(Component.LEFT_ALIGNMENT);
-        card.add(urlField);
-
-        card.add(Box.createVerticalStrut(6));
-
-        card.add(new RoundedButton("Analyze URL", ACCENT, () -> {
-            var u = urlField.getText().trim();
-            if (!u.isEmpty()) analyzeUrl(u);
-        }));
-
-        card.add(divider());
-
         // Screenshot section
         var imgTitle = new JLabel("\uD83D\uDDBC\uFE0F  Screenshot");
         imgTitle.setFont(new Font(FONT, Font.BOLD, 12));
@@ -334,7 +280,7 @@ public class App {
         status.add(statusIcon, sg);
 
         sg.gridy = 1; sg.insets = new Insets(12, 0, 0, 0);
-        statusText = new JLabel("Enter a URL or upload a screenshot to analyze");
+        statusText = new JLabel("Upload a screenshot to analyze");
         statusText.setFont(new Font(FONT, Font.PLAIN, 14));
         statusText.setForeground(TEXT_SUB);
         status.add(statusText, sg);
@@ -371,54 +317,6 @@ public class App {
         if (loading) resultsScrollOuter.setVisible(false);
     }
 
-    private void analyzeUrl(String url) {
-        setLoading(true, "Launching browser...");
-        CompletableFuture.supplyAsync(() -> {
-            try (var pw = Playwright.create()) {
-                var b = pw.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
-                var ctx = b.newContext(new Browser.NewContextOptions().setViewportSize(1280, 720));
-                var p = ctx.newPage();
-                var perf = new LinkedHashMap<String, Object>();
-
-                long t0 = System.currentTimeMillis();
-                p.navigate(url, new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE).setTimeout(30000.0));
-                perf.put("load_time", System.currentTimeMillis() - t0);
-
-                var res = (List<Map<String, Object>>) p.evaluate(
-                    "JSON.parse(JSON.stringify(performance.getEntriesByType('resource').map(e=>({transferSize:e.transferSize||0}))))");
-                var rl = res != null ? res : new ArrayList<Map<String, Object>>();
-                perf.put("resource_count", rl.size());
-                perf.put("total_size", rl.stream().mapToLong(r -> ((Number) r.getOrDefault("transferSize", 0)).longValue()).sum());
-
-                var ss = p.screenshot(new Page.ScreenshotOptions().setType(ScreenshotType.PNG).setFullPage(false));
-                var ssb = Base64.getEncoder().encodeToString(ss);
-                var dom = (Map<String, Object>) p.evaluate(JS_EXTRACTOR);
-                b.close();
-
-                var cat = new LinkedHashMap<String, Object>();
-                cat.put("readability", ReadabilityCheck.check(dom));
-                cat.put("accessibility", AccessibilityCheck.check(dom));
-                cat.put("contrast", ContrastCheck.check(dom));
-                cat.put("layout", LayoutCheck.check(dom));
-                cat.put("responsiveness", ResponsivenessCheck.check(dom, perf));
-
-                long total = 0;
-                for (var c : cat.values()) total += ((Number) ((Map) c).get("score")).longValue();
-
-                var r = new LinkedHashMap<String, Object>();
-                r.put("type", "url"); r.put("title", dom.getOrDefault("title", url));
-                r.put("url", url); r.put("total_score", (int) total);
-                r.put("max_score", 100); r.put("categories", cat);
-                r.put("performance", perf); r.put("screenshot", ssb);
-                return r;
-            } catch (Exception e) {
-                var err = new LinkedHashMap<String, Object>();
-                err.put("error", "Analysis failed: " + e.getMessage());
-                return err;
-            }
-        }).thenAccept(r -> SwingUtilities.invokeLater(() -> showResult(r)));
-    }
-
     private void analyzeImage(java.io.File file) {
         setLoading(true, "Analyzing screenshot...");
         CompletableFuture.supplyAsync(() -> {
@@ -438,7 +336,11 @@ public class App {
     @SuppressWarnings("unchecked")
     private void showResult(Map<String, Object> result) {
         if (result.containsKey("error")) {
-            setLoading(false, "\u2717  " + result.get("error"));
+            var err = ((String) result.get("error")).replace("\n", "<br>");
+            statusIcon.setText("\u26A0");
+            statusText.setText("<html>" + err + "</html>");
+            statusText.setForeground(ORANGE);
+            resultsScrollOuter.setVisible(false);
             return;
         }
 
@@ -1122,10 +1024,4 @@ public class App {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  JS EXTRACTOR
-    // ═══════════════════════════════════════════════════════════
-    private static final String JS_EXTRACTOR = """
-        (()=>{const h=[];document.querySelectorAll('h1,h2,h3,h4,h5,h6').forEach(e=>{const s=getComputedStyle(e);h.push({tag:e.tagName,level:parseInt(e.tagName[1]),text:(e.textContent||'').trim().substring(0,100),fontSize:parseFloat(s.fontSize)})});const im=[];document.querySelectorAll('img').forEach(e=>{const r=e.getBoundingClientRect();if(r.width>0&&r.height>0)im.push({hasAlt:e.hasAttribute('alt'),altText:e.alt,width:r.width,height:r.height,visible:r.top<window.innerHeight&&r.bottom>0})});const ii=[];document.querySelectorAll('input,select,textarea,button,a,[role="button"]').forEach(e=>{const r=e.getBoundingClientRect();if(r.width>0&&r.height>0)ii.push({tag:e.tagName,hasAriaLabel:e.hasAttribute('aria-label'),hasAriaLabelledby:e.hasAttribute('aria-labelledby'),type:e.getAttribute('type')||null,text:(e.textContent||'').trim().substring(0,50),associatedLabel:null})});document.querySelectorAll('label').forEach(l=>{const f=l.getAttribute('for');if(f){const inp=document.getElementById(f);if(inp){const d=ii.find(i=>i.tag===inp.tagName);if(d)d.associatedLabel=(l.textContent||'').trim().substring(0,50)}}});const se=[];['nav','main','header','footer','article','section','aside','figure','figcaption'].forEach(t=>{const c=document.querySelectorAll(t).length;if(c>0)se.push({tag:t,count:c})});const fs=[],lh=[],cs=new Set();document.querySelectorAll('p,li,span,div,label,a,button,input,textarea,select,td,th').forEach(e=>{const t=(e.textContent||'').trim();if(t.length>20){const s=getComputedStyle(e);const f=parseFloat(s.fontSize);if(f>0)fs.push(f);const l=s.lineHeight;if(l&&l!=='normal'){const lv=parseFloat(l);if(!isNaN(lv))lh.push(lv/f)}cs.add(s.color);cs.add(s.backgroundColor)}});const vp=document.querySelector('meta[name="viewport"]');let mq=false;try{for(const s of document.styleSheets){try{for(const r of s.cssRules||[]){if(r instanceof CSSMediaRule){mq=true;break}}}catch(e){}if(mq)break}}catch(e){}return JSON.parse(JSON.stringify({headingLevels:h,images:im,interactiveElements:ii,semanticElements:se,allFontSizes:fs,allLineHeights:lh,allColors:[...cs],viewportMeta:vp?vp.getAttribute('content'):null,hasMediaQueries:mq,bodyChildren:document.body?document.body.children.length:0,textLength:(document.body?document.body.textContent:'').length,elementCount:document.querySelectorAll('*').length,hasDoctype:document.doctype!==null,langAttr:document.documentElement?document.documentElement.lang:null,title:document.title}))})()
-        """;
 }

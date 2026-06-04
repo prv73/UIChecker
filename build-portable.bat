@@ -1,6 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
-set MAVEN_OPTS=--enable-native-access=ALL-UNNAMED
+set MAVEN_OPTS=
 
 echo ============================================
 echo  UI Checker - Portable Build
@@ -57,7 +57,7 @@ set JPACKAGE_TYPE=app-image
 set JPACKAGE="!JAVA_HOME!\bin\jpackage"
 if exist dist rmdir /s /q dist
 
-%JPACKAGE% --type %JPACKAGE_TYPE% --input dist-input --main-jar ui-checker-1.0.0.jar --main-class uichecker.App --name UIChecker --add-modules java.base,java.compiler,java.desktop,java.sql --dest dist --java-options "--enable-native-access=ALL-UNNAMED" --java-options "-Dawt.useSystemAAFontSettings=on" --java-options "-Dswing.aatext=true"
+%JPACKAGE% --type %JPACKAGE_TYPE% --input dist-input --main-jar ui-checker-1.0.0.jar --main-class uichecker.App --name UIChecker --add-modules java.base,java.desktop --dest dist --java-options "-Dawt.useSystemAAFontSettings=on" --java-options "-Dswing.aatext=true"
 
 if %errorlevel% neq 0 (
     echo jpackage failed. See error above.
@@ -85,9 +85,6 @@ if /I "%JPACKAGE_TYPE%"=="exe" (
     echo  Double-click UIChecker.exe to launch.
 )
 echo ============================================
-echo.
-echo  NOTE: On first URL analysis, Playwright will
-echo  download Chromium (~150 MB) automatically.
 echo.
 echo  To distribute, share the entire dist\ folder.
 echo.

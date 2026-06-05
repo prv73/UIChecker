@@ -42,9 +42,9 @@ CAT_LABELS = {
 
 def resolve_font(app):
     families = ["Segoe UI", "Segoe UI Variable Text", "Microsoft Sans Serif", "Tahoma", "Arial"]
-    db = QFontDatabase()
+    available = QFontDatabase.families()
     for f in families:
-        if f in db.families():
+        if f in available:
             return f
     return "Segoe UI"
 
@@ -754,7 +754,10 @@ class UICheckerWindow(QMainWindow):
         return grid
 
     def _show_example(self, checked=False):
-        result = generate_example()
+        try:
+            result = generate_example()
+        except Exception as e:
+            result = {"error": str(e)}
         self._show_result(result)
 
     def _show_about(self):

@@ -10,6 +10,12 @@ Built with **Python 3.14 + PySide6 6.11.1 + Pillow** — Windows only.
 
 Double-click `dist/UIChecker.exe` — no Python or dependencies required (67 MB standalone EXE).
 
+## Screenshots
+
+| Overview | Results | Example Analysis |
+|---|---|---|
+| ![Overview](screenshots/overview.png) | ![Results](screenshots/results.png) | ![Example](screenshots/example.png) |
+
 ## Features
 
 - **Color Contrast** — samples pixels, measures local contrast ratios, flags low-contrast areas
